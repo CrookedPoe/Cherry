@@ -9,40 +9,49 @@ using Silk.NET.Maths;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
-namespace Cherry.Engine
+namespace Cherry.Engine.WindowHandler
 {
-    public class Window
+    public class WindowHandler
     {
-        public IWindow WindowHandle { get; private set; }
+        public class WindowEvents
+        {
+            public Action LoadEvent { get; set; }
+            public unsafe Action<double> UpdateEvent { get; set; }
+            public unsafe Action<double> RenderEvent { get; set; }
+            public Action<Vector2D<int>> ResizeEvent { get; set; }
+            public Action CloseEvent { get; set; }
+        }
+
+        public IWindow Window { get; private set; }
         public int Width { get; private set; }
         public int Height { get; private set; }
-        public float[] ClearColor { get; private set; } = new float[] { 0.4f, 0.4f, 0.4f, 1.0f };
-        public Action LoadEvent { get; set; }
-        public unsafe Action<double> UpdateEvent { get; set; }
-        public unsafe Action<double> RenderEvent { get; set; }
-        public Action<Vector2D<int>> ResizeEvent { get; set; }
-        public Action CloseEvent { get; set; }
+        public WindowEvents Events { get; set; }
 
-
-        public Window(string title, int width, int height)
+        public WindowHandler(string title, int width, int height)
         {
             WindowOptions options = WindowOptions.Default;
             options.Title = title;
-            Width = width;
-            Height = height;
             options.Size = new Vector2D<int>(width, height);
-            WindowHandle = Silk.NET.Windowing.Window.Create(options);
+            Window = Silk.NET.Windowing.Window.Create(options);
+            Width = options.Size.X;
+            Height = options.Size.Y;
+            Events = new WindowEvents();
         }
 
         public void Run()
         {
-            WindowHandle.Load += LoadEvent;
-            WindowHandle.Update += UpdateEvent;
-            WindowHandle.Render += RenderEvent;
-            WindowHandle.Resize += ResizeEvent;
-            WindowHandle.Closing += CloseEvent;
+            Window.Load += Events.LoadEvent;
+            //Window.FileDrop
+            //Window.StateChanged
+            //Window.Move
+            //Window.FramebufferResize
+            //Window.FocusChanged
+            Window.Update += Events.UpdateEvent;
+            Window.Render += Events.RenderEvent;
+            Window.Resize += Events.ResizeEvent;
+            Window.Closing += Events.CloseEvent;
 
-            WindowHandle.Run();
+            Window.Run();
         }
 
         public void SetIcon(string filepath)
@@ -64,7 +73,7 @@ namespace Cherry.Engine
 
             // Create Icon
             Silk.NET.Core.RawImage icon = new Silk.NET.Core.RawImage(img.Width, img.Height, new Memory<byte>(pixels));
-            WindowHandle.SetWindowIcon(new[] {icon});
+            Window.SetWindowIcon(new[] {icon});
         }
     }
 }
