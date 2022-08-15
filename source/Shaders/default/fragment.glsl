@@ -1,28 +1,41 @@
-precision highp float;
+#version 330 core
+in vec3 fPosition;
+in vec2 fTexCoords;
+in vec3 fNormals;
 
-varying vec3 vPosition;
-varying vec2 vTexCoords;
-varying vec3 vNormals;
-
-struct PointLight {
-    vec3 color;
-    vec3 position;
+struct Material {
+    vec3 Ka;
+    vec3 Kd;
+    vec3 Ks;
+    float Ns;
 };
 
-uniform PointLight pointLights[NUM_POINT_LIGHTS];
-uniform sampler2D texture;
-uniform vec2 offset;
+struct Light {
+    vec3 position;
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+};
 
-void main() {
-    
-    vec4 lightMultiplier = vec4(0.1, 0.1, 0.1, 1.0);
+uniform Material material;
+uniform Light light;
+uniform vec3 cameraPosition;
+uniform sampler2D uTexel0;
+uniform sampler2D uTexel1;
 
-    for(int l = 0; l < NUM_POINT_LIGHTS; l++) {
-        vec3 adjustedLight = pointLights[l].position + cameraPosition;
-        vec3 lightDirection = normalize(vecPos - adjustedLight);
-        lightMultiplier.rgb += clamp(dot(-lightDirection, vecNormal), 0.0, 1.0 * pointLights[l].color;
-    }
+out vec4 FragColor;
 
-    vec4 texelColor = texture2D( texture, vUv + offset );
-    gl_FragColor = texelColor * lightMultiplier;
+void main()
+{
+      vec3 viewDirection = normalize(cameraPosition - fPosition);
+      vec3 lightDirection = normalize(light.position - fPosition);
+      vec3 NormalizedfNormals = normalize(fNormals);
+
+      vec3 ambient = light.ambient * material.Ka;
+      vec3 diffuse = light.diffuse * (max(dot(NormalizedfNormals, lightDirection), 0.0) * material.Kd);
+      vec3 specular = light.specular * (pow(max(dot(viewDirection, reflect(-lightDirection, NormalizedfNormals)), 0.0), material.Ns) * material.Ks);
+      vec4 lightColor = vec4(vec3(ambient + diffuse + specular), 1.0);
+      vec4 texelColor = texture2D(uTexel0, fTexCoords);
+
+      FragColor = texelColor * lightColor;
 }

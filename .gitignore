@@ -6,3 +6,5 @@ source/.vs/
 source/obj/
 
 source/bin/
+
+*.png
